@@ -100,5 +100,5 @@ intents.message_content = True
 
 client = MyClient(intents=intents)
 
-# Replace with your own bot token
+# Replace with your own bot api token
 client.run("")
