@@ -1,0 +1,11 @@
+{
+    "api_key": "YOUR_BOT_TOKEN_HERE",
+    "channels": [
+        CHANNEL_ID_1,
+        CHANNEL_ID_2
+    ],
+    "output_channel": CHANNEL_ID_WHERE_LEADERBOARD_IS_POSTED,
+    "role": "NAME_OF_THE_ROLE_TO_AWARD",
+    "reset_hour": time when you want the role to be given 0-23,
+    "reset_min": time when you want the role to be given 0-59
+}
