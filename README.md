@@ -28,7 +28,8 @@ Rename `config_example.json` to `config.json` and fill in all the values.
     "output_channel": CHANNEL_ID_WHERE_LEADERBOARD_IS_POSTED,
     "role": "NAME_OF_THE_ROLE_TO_AWARD",
     "reset_hour": HOUR,
-    "reset_min": MINUTES
+    "reset_min": MINUTES,
+    "reset_day": DAY
 }
 ```
 
@@ -40,6 +41,7 @@ Rename `config_example.json` to `config.json` and fill in all the values.
 | `role`           | The exact name of the role that gets awarded to the top helper  |
 | `reset_hour`     | The hour the leaderboard resets and role is awarded (UTC, 0-23) |
 | `reset_min`      | The minute the leaderboard resets (0-59)                        |
+| `reset_day`      | The day the leaderboard resets (0=Monday, 1=Tuesday...)         |
 
 > **Note:** `reset_hour` and `reset_min` use UTC time.
 

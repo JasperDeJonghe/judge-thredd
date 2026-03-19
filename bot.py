@@ -136,6 +136,13 @@ async def post_leaderboard(guild: discord.Guild):
 
 @tasks.loop(time=time(hour=client.config["reset_hour"], minute=client.config["reset_min"], tzinfo=timezone.utc))
 async def giverole_loop():
+    
+    # Remove this block to make it daily:
+    from datetime import datetime
+    if datetime.now(timezone.utc).weekday() != client.config["reset_day"]:
+        return
+    # End block
+    
     data = load_data()
     if not data:
         print("No data available.")
