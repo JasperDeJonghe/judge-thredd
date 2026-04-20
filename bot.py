@@ -144,23 +144,6 @@ async def post_leaderboard(guild: discord.Guild):
     await output_channel.send(embed=embed)
 
 
-# leaderboard command
-
-# Uncomment this part if you want to manually call the leaderboard command
-
-# @client.tree.command(name="leaderboard", description="Show the message leaderboard")
-# async def leaderboard(interaction: discord.Interaction):
-#     data = load_data()
-
-#     if not data:
-#         await interaction.response.send_message("Leaderboard is empty.")
-#         return
-
-#     await post_leaderboard(interaction.guild)
-#     await interaction.response.send_message("Leaderboard posted!")
-
-# add channel id
-
 @client.tree.command(name="law-here", description="Add or remove this channelID from the config")
 async def law_here(interaction: discord.Interaction):
     user_role_names = [role.name for role in interaction.user.roles]
@@ -181,8 +164,66 @@ async def law_here(interaction: discord.Interaction):
         save_config(client.config)
         await interaction.response.send_message("The law has eyes here now.", ephemeral=False)
         
-    
 
+# leaderboard command
+
+@client.tree.command(name="law-now", description="call the loop manually")
+async def law_now(interaction: discord.Interaction):
+    user_role_names = [role.name for role in interaction.user.roles]
+    allowed = client.config["allowed_roles"]
+    has_permission = any(role in user_role_names for role in allowed)
+    
+    if not has_permission:
+        await interaction.response.send_message("No clearance. No appeal. Move.", ephemeral=True)
+        return
+    else:
+        await interaction.response.send_message("The law has spoken", ephemeral=True)
+    
+    data = load_data()
+    if not data:
+        print("No data available.")
+        return
+
+    guild = client.guilds[0]
+    
+    await post_leaderboard(guild)
+    
+    trophee_role = discord.utils.get(guild.roles, name=client.config["role"])
+    if not trophee_role:
+        print("role not found.")
+        return
+
+    top_user_id = max(data, key=data.get)
+    try:
+        top_member = await guild.fetch_member(int(top_user_id))
+    except discord.NotFound:
+        print("Top user not found in server.")
+        return
+
+    # Remove role from everyone who currently has it
+    for member in trophee_role.members:
+        try:
+            await member.remove_roles(trophee_role)
+        except discord.Forbidden:
+            print(f"Cannot remove Trophee from {member.mention}.")
+
+    # Award role to the winner
+    try:
+        await top_member.add_roles(trophee_role)
+        embed_announcement = discord.Embed(title=f"{top_member} is the new best helper!", color=discord.Color.gold())
+        output_channel = client.get_channel(int(client.config["output_channel"]))
+        await output_channel.send(embed=embed_announcement)
+        
+        print(f"{top_member.mention} is now the top helper!")
+    except discord.Forbidden:
+        print("Missing permissions to assign role.")
+        return
+
+    save_data({})
+    print("Leaderboard has been reset.")
+    
+    
+    
 
 
 # giverole
@@ -242,3 +283,4 @@ async def giverole_loop():
 # run
 
 client.run(client.config["api_key"])
+
