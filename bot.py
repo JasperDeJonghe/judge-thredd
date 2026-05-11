@@ -95,9 +95,6 @@ async def on_message(message: discord.Message):
     channelid = message.channel.id
 
     if channelid in client.config["channels"]:
-        if "sorry" in message.content.lower():
-            await message.reply("I've never apologized.")
-        
         if user in data:
             data[user] += 1
         else:
@@ -228,7 +225,7 @@ async def give_role(interaction: discord.Interaction = None):
 
 @client.tree.command(name="law-now", description="call the loop manually")
 async def law_now(interaction: discord.Interaction):
-    give_role(interaction)
+    await give_role(interaction)
     
     
 # giverole
@@ -240,7 +237,7 @@ async def giverole_loop():
     from datetime import datetime
     if datetime.now(timezone.utc).weekday() != client.config["reset_day"]:
         return
-    give_role()
+    await give_role()
 
 # run
 
