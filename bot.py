@@ -61,7 +61,7 @@ class MyClient(discord.Client):
 
 client = MyClient()
 
-# message counter (unchanged logic)
+# message counter
 
 @client.event
 async def on_message(message: discord.Message):
@@ -95,10 +95,11 @@ async def on_message(message: discord.Message):
     channelid = message.channel.id
 
     if channelid in client.config["channels"]:
-        if user in data:
-            data[user] += 1
+        if user in data and isinstance(data[user], dict) and "count" in data[user]:
+            data[user]["count"] += 1
+            data[user]["name"] = message.author.name
         else:
-            data[user] = 1
+            data[user] = {"name": message.author.name, "count": 1}
             print(f"New user added to leaderboard: {message.author.name} (ID: {user})")
 
         save_data(data)
@@ -112,10 +113,16 @@ async def post_leaderboard(guild: discord.Guild):
         return
 
     flipped = []
-    for user_id, count in data.items():
-        flipped.append((count, user_id))
+    for user_id, info in data.items():
+        if not isinstance(info, dict) or "count" not in info:
+            print(f"Skipping corrupted leaderboard entry for {user_id}: {info!r}")
+            continue
+        flipped.append((info["count"], user_id))
 
-    flipped.sort(reverse=True)
+    if not flipped:
+        return
+
+    flipped.sort(key=lambda item: item[0], reverse=True)
     top_5 = flipped[:5]
 
     embed = discord.Embed(title="Top 5 Helpers", color=discord.Color.gold())
@@ -127,7 +134,7 @@ async def post_leaderboard(guild: discord.Guild):
         if member is not None:
             name = member.name
         else:
-            name = f"Unknown (ID: {user_id})"
+            name = data[user_id].get("name", f"Unknown (ID: {user_id})")
 
         lines.append(f"{Medals[index]} {name} — {count} messages")
 
@@ -173,20 +180,24 @@ async def give_role(interaction: discord.Interaction = None):
         await interaction.response.send_message("The law has spoken", ephemeral=True)
 
     data = load_data()
-    if not data:
+    valid_data = {
+        uid: info for uid, info in data.items()
+        if isinstance(info, dict) and "count" in info
+    }
+    if not valid_data:
         print("No data available to process.")
         return
 
     guild = interaction.guild if interaction else client.guilds[0]
-    
+
     await post_leaderboard(guild)
-    
+
     trophee_role = discord.utils.get(guild.roles, name=client.config["role"])
     if not trophee_role:
         print(f"Role '{client.config['role']}' not found.")
         return
 
-    top_user_id = max(data, key=data.get)
+    top_user_id = max(valid_data, key=lambda uid: valid_data[uid]["count"])
     try:
         top_member = await guild.fetch_member(int(top_user_id))
     except discord.NotFound:
@@ -203,14 +214,16 @@ async def give_role(interaction: discord.Interaction = None):
     # Award role to winner
     try:
         await top_member.add_roles(trophee_role)
-        embed_announcement = discord.Embed(
-            title=f"The Verdict is In!", 
-            description=f"{top_member.mention} is the new best helper!", 
-            color=discord.Color.gold()
+        announcement = (
+            f"🏆 **The Verdict is In!**\n"
+            f"{top_member.mention} is the new best helper!"
         )
         output_channel = client.get_channel(int(client.config["output_channel"]))
         if output_channel:
-            await output_channel.send(embed=embed_announcement)
+            await output_channel.send(
+                content=announcement,
+                allowed_mentions=discord.AllowedMentions(users=True)
+            )
         
         print(f"{top_member.name} is now the top helper!")
     except discord.Forbidden:
@@ -242,4 +255,3 @@ async def giverole_loop():
 # run
 
 client.run(client.config["api_key"])
-
