@@ -42,7 +42,6 @@ def save_config(config: dict):
 # client setup
 
 intents = discord.Intents.default()
-intents.message_content = True
 intents.members = True
 
 class MyClient(discord.Client):
