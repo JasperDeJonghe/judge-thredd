@@ -12,5 +12,6 @@
     ],
     "reset_hour": time when you want the role to be given 0-23,
     "reset_min": time when you want the role to be given 0-59,
-    "reset_day": day you want the role to be given 
+    "reset_day": day you want the role to be given,
+    "current_holder": "" Don't change this yourself
 }

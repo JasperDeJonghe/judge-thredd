@@ -42,7 +42,6 @@ def save_config(config: dict):
 # client setup
 
 intents = discord.Intents.default()
-intents.members = True
 
 class MyClient(discord.Client):
     def __init__(self):
@@ -64,9 +63,7 @@ client = MyClient()
 
 @client.event
 async def on_message(message: discord.Message):
-    if message.author == client.user:
-        return
-    if message.content.startswith("/"):
+    if message.author.bot:
         return
     
     if client.user.mentioned_in(message) and not message.mention_everyone:
@@ -128,20 +125,17 @@ async def post_leaderboard(guild: discord.Guild):
     lines = []
 
     for index, (count, user_id) in enumerate(top_5):
-        member = guild.get_member(int(user_id))
-
-        if member is not None:
-            name = member.name
-        else:
-            name = data[user_id].get("name", f"Unknown (ID: {user_id})")
+        name = data[user_id].get("name", f"Unknown (ID: {user_id})")
 
         lines.append(f"{Medals[index]} {name} — {count} messages")
 
     embed.add_field(name="", value="\n".join(lines), inline=False)
 
-    top_member = guild.get_member(int(top_5[0][1]))
-    if top_member is not None:
+    try:
+        top_member = await guild.fetch_member(int(top_5[0][1]))
         embed.set_thumbnail(url=top_member.display_avatar.url)
+    except discord.NotFound:
+        pass
 
     output_channel = client.get_channel(int(client.config["output_channel"]))
     await output_channel.send(embed=embed)
@@ -203,12 +197,16 @@ async def give_role(interaction: discord.Interaction = None):
         print("Top user not found in server.")
         return
 
-    # Remove role from existing holders
-    for member in trophee_role.members:
+    # Remove role from the previous holder (tracked in config, no member cache needed)
+    previous_holder_id = client.config.get("current_holder")
+    if previous_holder_id:
         try:
-            await member.remove_roles(trophee_role)
+            previous_holder = await guild.fetch_member(int(previous_holder_id))
+            await previous_holder.remove_roles(trophee_role)
+        except discord.NotFound:
+            pass  # previous holder left the server
         except discord.Forbidden:
-            print(f"Cannot remove role from {member.name}.")
+            print(f"Cannot remove role from user {previous_holder_id}.")
 
     # Award role to winner
     try:
@@ -224,6 +222,8 @@ async def give_role(interaction: discord.Interaction = None):
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
         
+        client.config["current_holder"] = str(top_member.id)
+        save_config(client.config)
         print(f"{top_member.name} is now the top helper!")
     except discord.Forbidden:
         print("Bot lacks permissions to assign roles.")

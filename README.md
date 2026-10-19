@@ -1,6 +1,6 @@
 # Discord Leaderboard Bot
 
-A Discord bot that tracks the most active members in specific channels, shows a daily top 5 leaderboard, and automatically awards a role to the top helper.
+A Discord bot that tracks the most active members in specific channels, posts a weekly top 5 leaderboard, and automatically awards a role to the top helper.
 
 ---
 
@@ -30,7 +30,8 @@ Rename `config_example.json` to `config.json` and fill in all the values.
     "allowed_roles": ["Team", "Moderator"],
     "reset_hour": HOUR,
     "reset_min": MINUTES,
-    "reset_day": DAY
+    "reset_day": DAY,
+    "current_holder": ""
 }
 ```
 
@@ -40,10 +41,11 @@ Rename `config_example.json` to `config.json` and fill in all the values.
 | `channels`       | A list of channel IDs the bot will count messages in. Can be managed at runtime with `/law-here` |
 | `output_channel` | The channel ID where the leaderboard will be posted                                              |
 | `role`           | The exact name of the role that gets awarded to the top helper                                   |
-| `allowed_roles`  | A list of role names that are allowed to use the `/law-here` command                             |
+| `allowed_roles`  | A list of role names that are allowed to use the `/law-here` and `/law-now` commands             |
 | `reset_hour`     | The hour the leaderboard resets and role is awarded (UTC, 0-23)                                  |
 | `reset_min`      | The minute the leaderboard resets (0-59)                                                         |
 | `reset_day`      | The day the leaderboard resets (0=Monday, 1=Tuesday...)                                          |
+| `current_holder` | Managed by the bot: the user ID of the current role holder. Leave it as `""`                     |
 
 > **Note:** `reset_hour` and `reset_min` use UTC time.
 
@@ -57,8 +59,8 @@ python bot.py
 
 ## How it works
 
-- The bot counts every message sent in the configured channels
-- Every day at the configured time, it automatically posts the top 5 leaderboard and awards the configured role to the top user
+- The bot counts every message sent in the configured channels (messages from bots are ignored)
+- Once a week, on the configured day and time, it automatically posts the top 5 leaderboard and awards the configured role to the top user, removing it from the previous holder
 - The leaderboard resets after the role is awarded
 
 ---
